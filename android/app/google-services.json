@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "284544727117",
+    "firebase_url": "https://tipy-98639.firebaseio.com",
+    "project_id": "tipy-98639",
+    "storage_bucket": "tipy-98639.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284544727117:android:fe44e648414d34d858c404",
+        "android_client_info": {
+          "package_name": "com.anosoft.tipy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "284544727117-595vrsf1c44qbi56l6f0umq8jf2lje4m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-wWRzLn2lqtDYVHGtMHI7EZ_bNtXn6D8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "284544727117-595vrsf1c44qbi56l6f0umq8jf2lje4m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
