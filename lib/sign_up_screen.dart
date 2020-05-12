@@ -5,6 +5,15 @@ import 'package:login_app4/login_screen.dart';
 import 'size_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:progress_dialog/progress_dialog.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'welcome_screen.dart' as welcomeScreen;
+
+final _firebaseDB = FirebaseDatabase.instance;
+final newCustomer = _firebaseDB.reference().child('Customers available');
+final customer = newCustomer.child(userID);
+final geofire = customer.child('Geofire');
+final userLocation = customer.child('Location');
+var userID;
 
 
 class SignUpScreen extends StatefulWidget {
@@ -364,13 +373,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ));
 
 
+
+
                             final newuser = await _auth
                                 .createUserWithEmailAndPassword(
                                 email: _email, password: _password);
 
                             if(newuser != null){
                               Navigator.pushNamed(context, HomeScreen.id);
+
+                              userID = newuser.user.uid;
+                              customer.push().set({
+                                'Geofire': null,
+                                'Location': null,
+                                'Posts': null
+                              });
+                              geofire.push().set({
+                                'l': 'JKJsdjsa',
+                                'g': 'sjkdjskd'
+                              });
+                              userLocation.push().set({
+                                'l': welcomeScreen.latitude,
+                                'g': welcomeScreen.longitude
+                              });
                             }
+
+
                           }
                           catch (e){
                             print(e);

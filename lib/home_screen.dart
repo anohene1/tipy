@@ -1,31 +1,110 @@
 
 
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_map_location_picker/google_map_location_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_webservice/places.dart';
-import 'package:google_places_flutter/google_places_flutter.dart';
+import 'package:login_app4/login_screen.dart';
+import 'package:login_app4/my_posts_screen.dart';
+import 'package:login_app4/my_replies_screen.dart';
+import 'package:login_app4/profile_screen.dart';
+import 'package:login_app4/sign_up_screen.dart';
 import 'package:login_app4/size_config.dart';
 import 'package:login_app4/tipy_icons_icons.dart';
 import 'package:login_app4/tipy_theme.dart';
+import 'package:login_app4/world_screen.dart';
 import 'location.dart';
-import 'package:progress_dialog/progress_dialog.dart';
-import 'package:search_map_place/search_map_place.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:geocoder/geocoder.dart';
-import 'package:place_picker/place_picker.dart';
-import 'package:google_maps_place_picker/google_maps_place_picker.dart';
+import 'package:google_maps_place_picker/google_maps_place_picker.dart' as PlacePicker;
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:tuple/tuple.dart';
-import 'package:google_map_location_picker/google_map_location_picker.dart' as Loc;
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
+GoogleMapController mapController;
 
+var newLatitude;
+var newLongitude;
+var postLat;
+var postLong;
 
+void getPostLatLong(String url)async{
+  http.Response response = await http.get(url);
+  String data = response.body;
+  postLat = jsonDecode(data)['result']['geometry']['location']['lat'];
+  postLong = jsonDecode(data)['result']['geometry']['location']['lng'];
+}
 
+void getLatLng(String url)async{
+  http.Response response = await http.get(url);
+  String data = response.body;
+
+  newLatitude = jsonDecode(data)['result']['geometry']['location']['lat'];
+  newLongitude = jsonDecode(data)['result']['geometry']['location']['lng'];
+  print(newLongitude);
+  print(newLatitude);
+  print(data);
+  moveMap(newLatitude, newLongitude);
+}
+
+void moveMap(double lat, double long){
+  mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: LatLng(lat, long), zoom: 20)
+      )
+
+  );
+}
+String geometryURL = 'https://maps.googleapis.com/maps/api/place/details/json?place_id=$place_id&fields=geometry&key=AIzaSyDRttc2Q3q2aEzY-ke41sbgABJ9YMr0r48';
+
+final _firestore = Firestore.instance;
+String postText = postController.text;
+enum Screen{list, map}
+var placeID;
+var place_id;
+
+final _firebaseDB = FirebaseDatabase.instance;
+final posts = _firebaseDB.reference().child('Customers available').child(userID).child('Posts');
+final comments = posts.child('Comments');
+final _auth = FirebaseAuth.instance;
+FirebaseUser loggedInUser;
+
+GoogleMapController _controller;
+
+void getCurrentUser() async {
+  try {
+    final user = await _auth.currentUser();
+    if (user != null) {
+      loggedInUser = user;
+      print(loggedInUser.email);
+    }
+  }catch(e){
+    print(e);
+  }
+}
+
+const kInactiveColor = Colors.transparent;
+const kActiveColor = Colors.green;
+const kActiveText = Colors.white;
+const kInactiveText = Colors.green;
+
+double latitude;
+double longitude;
+
+void getLocation() async{
+  Locations location = Locations();
+  await location.getCurrentLocation();
+  longitude = location.longitude;
+  latitude = location.latitude;
+}
+
+final postController = TextEditingController();
 
 class HomeScreen extends StatelessWidget {
 
@@ -68,37 +147,28 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     }
   }
 
-
-  ProgressDialog pr;
-
-  double latitude;
-  double longitude;
-
-  void getLocation() async{
-    Locations location = Locations();
-    await location.getCurrentLocation();
-    longitude = location.longitude;
-    latitude = location.latitude;
-  }
-
-
-
-  final _auth = FirebaseAuth.instance;
-  FirebaseUser loggedInUser;
-
-  GoogleMapController _controller;
-
-  void getCurrentUser() async {
-    try {
-      final user = await _auth.currentUser();
-      if (user != null) {
-        loggedInUser = user;
-        print(loggedInUser.email);
-      }
-    }catch(e){
-print(e);
+  save(String key, dynamic value) async {
+    final SharedPreferences sharedPrefs = await SharedPreferences.getInstance();
+    if (value is bool) {
+      sharedPrefs.setBool(key, value);
+    } else if (value is String) {
+      sharedPrefs.setString(key, value);
+    } else if (value is int) {
+      sharedPrefs.setInt(key, value);
+    } else if (value is double) {
+      sharedPrefs.setDouble(key, value);
+    } else if (value is List<String>) {
+      sharedPrefs.setStringList(key, value);
     }
   }
+
+
+
+
+
+
+
+
 
   TabController tabController;
 
@@ -110,6 +180,34 @@ print(e);
   Color textFieldColor = Colors.grey[200];
   bool isLight = true;
   Color sliderColor = Colors.white;
+  Screen selectedScreen;
+
+  saveThemePref(value) async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setBool("theme", value);
+  }
+
+  getThemePref() async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool themeValue = prefs.getBool("theme");
+    return themeValue;
+  }
+
+
+  changeMapTheme(){
+    getJsonFile("assets/datkmap.json").then(setMapStyle);
+  }
+
+  Future<String> getJsonFile(String path) async{
+  return await rootBundle.loadString(path);
+  }
+
+  void setMapStyle(String mapStyle){
+    _controller.setMapStyle(mapStyle);
+  }
+
+  String _mapStyle;
+
 
 
   @override
@@ -118,51 +216,114 @@ print(e);
     tabController = TabController(length: 3, vsync: this);
     getCurrentUser();
     getLocation();
+    selectedScreen = Screen.map;
+    rootBundle.loadString('assets/darkmap.txt').then((string){
+      _mapStyle = string;
+    });
+
+    getThemePref();
+
 
 
   }
 
+
+
   @override
   Widget build(BuildContext context) {
 
-    pr = new ProgressDialog(context);
 
 
 
 
     return MaterialApp(
-      theme: theme,
+     theme: theme,
       home: Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: Container(
-            height: SizeConfig.blockSizeVertical * 5,
-            child: GooglePlaceAutoCompleteTextField(
-              textStyle: TextStyle(
-                fontFamily: 'myriadpro'
-              ),
-              textEditingController: controller,
-              googleAPIKey: 'AIzaSyDRttc2Q3q2aEzY-ke41sbgABJ9YMr0r48',
-              debounceTime: 60,
-              inputDecoration: InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(150)),
-                    borderSide: BorderSide(color: textFieldColor)
-                  ),
-                hintText: 'Search',
-                hintStyle: TextStyle(
-                  fontFamily: 'myriadpro',
-                  color: col,
-                ),
-                  focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.green),
-                      borderRadius: BorderRadius.all(Radius.circular(150))
-                  ),
-                filled: true,
-                fillColor: textFieldColor,
-              ),
+        title: Container(
+          width: SizeConfig.blockSizeHorizontal * 40,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Colors.green,
+              style: BorderStyle.solid,
+              width: 1
             ),
+            borderRadius: BorderRadius.circular(50)
           ),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                flex: 2,
+                child: GestureDetector(
+                  onTap: (){
+                    setState(() {
+                      selectedScreen = Screen.list;
+                    });
+                  },
+                  child: Container(
+                    height: SizeConfig.blockSizeVertical * 4,
+                    child: Container(
+                      height: SizeConfig.blockSizeVertical * 5,
+                      child: Material(
+                        borderRadius: BorderRadius.only(topLeft: Radius.circular(50), bottomLeft: Radius.circular(50)),
+                        color: selectedScreen == Screen.list
+                        ? kActiveColor
+                        : kInactiveColor,
+                        child: Center(
+                          child: Text(
+                            'List',
+                            style: TextStyle(
+                                color: selectedScreen == Screen.list
+                                ? kActiveText
+                                : kInactiveText,
+                                fontSize: SizeConfig.blockSizeVertical * 2,
+                                fontFamily: 'myriadpro'
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: GestureDetector(
+                  onTap: (){
+                    setState(() {
+                      selectedScreen = Screen.map;
+                    });
+                  },
+                  child: Container(
+                    height: SizeConfig.blockSizeVertical * 4,
+                    child: Container(
+                      height: SizeConfig.blockSizeVertical * 5,
+                      child: Material(
+                        borderRadius: BorderRadius.only(topRight: Radius.circular(50), bottomRight: Radius.circular(50)),
+                        color: selectedScreen == Screen.map
+                        ? kActiveColor
+                        : kInactiveColor,
+                        child: Center(
+                          child: Text(
+                            'Map',
+                            style: TextStyle(
+                                color: selectedScreen == Screen.map
+                                ? kActiveText
+                                : kInactiveText,
+                                fontSize: SizeConfig.blockSizeVertical * 2,
+                                fontFamily: 'myriadpro'
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
           actions: <Widget>[
             IconButton(icon: Icon(CupertinoIcons.search, ), onPressed: ()async{
               Prediction p = await PlacesAutocomplete.show(context: context, apiKey: 'AIzaSyDRttc2Q3q2aEzY-ke41sbgABJ9YMr0r48',
@@ -172,6 +333,12 @@ print(e);
                     Component(Component.country, 'gh')
                   ]
               );
+              getLatLng('https://maps.googleapis.com/maps/api/place/details/json?place_id=${p.placeId}&fields=geometry,name&key=AIzaSyDRttc2Q3q2aEzY-ke41sbgABJ9YMr0r48');
+              print(p.placeId);
+              place_id = p.placeId;
+
+
+
             }),
           ],
 
@@ -182,7 +349,7 @@ print(e);
             children: <Widget>[
               UserAccountsDrawerHeader(
                   accountName: Text('User One'),
-                  accountEmail: Text('lmao@gmail.com'),
+                  accountEmail: Text(loggedInUser == null ? 'Loading...': loggedInUser.email),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: Colors.white,
                   backgroundImage: AssetImage('images/logo.png'),
@@ -197,6 +364,9 @@ print(e);
                     fontSize: SizeConfig.blockSizeVertical * 2
                   ),
                 ),
+                onTap: (){
+                  Navigator.pushNamed(context, ProfileScreen.id);
+                },
               ),
               ListTile(
                 leading: Icon(TipyIcons.gong, size: SizeConfig.blockSizeVertical * 3,),
@@ -217,6 +387,9 @@ print(e);
               ),
               Divider(),
               ListTile(
+                onTap: (){
+                  Navigator.pushNamed(context, WorldScreen.id);
+                },
                 leading: Icon(TipyIcons.globe, size: SizeConfig.blockSizeVertical * 2.5,),
                 title: Text('World',
                   style: TextStyle(
@@ -235,8 +408,11 @@ print(e);
                 ),
               ),
               ListTile(
+                onTap: (){
+                  Navigator.pushNamed(context, MyPostsScreen.id);
+                },
                 leading: Icon(TipyIcons.speech_bubble_1,  size: SizeConfig.blockSizeVertical * 2.5,),
-                title: Text('My My Posts',
+                title: Text('My Posts',
                   style: TextStyle(
                       fontFamily: 'myriadpro',
                       fontSize: SizeConfig.blockSizeVertical * 2
@@ -244,6 +420,9 @@ print(e);
                 ),
               ),
               ListTile(
+                onTap: (){
+                  Navigator.pushNamed(context, MyRepliesScreen.id);
+                },
                 leading: Icon(TipyIcons.speech_bubble_3, size: SizeConfig.blockSizeVertical * 2.5,),
                 title: Text('My Replies',
                   style: TextStyle(
@@ -262,6 +441,9 @@ print(e);
                       textFieldColor = Colors.grey[500];
                       sliderColor = Colors.grey[800];
                       isLight = false;
+                      saveThemePref(false);
+
+
                     }
                     else{
                       toggleIcon = Icon(TipyIcons.crescent_moon, size: SizeConfig.blockSizeVertical * 2.5,);
@@ -270,6 +452,8 @@ print(e);
                       textFieldColor = Colors.grey[200];
                       sliderColor = Colors.white;
                       isLight = true;
+                      saveThemePref(true);
+
                     }
                   });
                 },
@@ -292,89 +476,9 @@ print(e);
             ),
           ),
         ),
-        body: SlidingUpPanel(
-          color: sliderColor,
-          padding: EdgeInsets.only(left: SizeConfig.blockSizeHorizontal * 4, right: SizeConfig.blockSizeHorizontal * 4),
-          collapsed: Container(
-            color: sliderColor,
-            child: Center(
-              child: Center(
-                  child: Column(
-                    children: <Widget>[
-                      Icon(Icons.keyboard_arrow_up, size: SizeConfig.blockSizeVertical * 3, color: col,),
-                      Text(' Swipe up to post', style: TextStyle(fontFamily: 'myriadpro', fontSize: SizeConfig.blockSizeVertical * 2, color: col),)
-                    ],
-                  )
-              ),
-            ),
-          ),
-          panel: Container(
-            child: Column(
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    SizedBox(width: SizeConfig.blockSizeHorizontal *13,),
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        child: Column(
-                          children: <Widget>[
-                            Icon(Icons.keyboard_arrow_down, size: SizeConfig.blockSizeVertical * 3, color: Colors.grey,),
-                            Text('Pull down to dismiss', style: TextStyle(fontFamily: 'myriadpro', fontSize: SizeConfig.blockSizeVertical * 1.5, color: Colors.grey),)
-
-                          ],
-                        ),
-                      ),
-                    ),
-                    IconButton(icon: Icon(Icons.location_on, size: 30, color: Colors.green,), onPressed: () async{
-                      Loc.LocationResult  result = await showLocationPicker(context, 'AIzaSyDRttc2Q3q2aEzY-ke41sbgABJ9YMr0r48', initialCenter: LatLng(31.1975844, 29.9598339));
-                    })
-                  ],
-                ),
-                Container(
-                  child: TextField(
-                    style: TextStyle(
-                      fontFamily: 'myriadpro'
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Say something...',
-                      hintStyle: TextStyle(
-                        fontFamily: 'myriadpro'
-                      )
-                    ),
-                    maxLines: null,
-                    keyboardType: TextInputType.multiline,
-                  ),
-                )
-              ],
-            ),
-          ),
-          minHeight: SizeConfig.blockSizeVertical * 7.5,
-          maxHeight: MediaQuery.of(context).size.height,
-          body:  Padding(
-            padding: EdgeInsets.only(bottom: SizeConfig.blockSizeVertical * 17),
-            child: Stack(
-              children: <Widget>[
-                Container(
-                  margin: EdgeInsets.only(bottom: SizeConfig.blockSizeVertical * 10),
-                  height: MediaQuery.of(context).size.height - 50,
-                  width: MediaQuery.of(context).size.width,
-                  child: GoogleMap(
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
-                    compassEnabled: true,
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(7.9465, -1.0232),
-                      zoom: 6.0,
-                    ),
-                    onMapCreated: mapCreated,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        body: selectedScreen == Screen.map
+        ? MapScreen(color: sliderColor, col: col, context: context)
+        : ListScreen(),
       ),
     );
   }
@@ -388,5 +492,217 @@ print(e);
 
 
 }
+
+
+Widget MapScreen({color, context, mapCreated, col}){
+  return SlidingUpPanel(
+    onPanelClosed: (){
+      postController.clear();
+    },
+    color: color,
+    padding: EdgeInsets.only(left: SizeConfig.blockSizeHorizontal * 4, right: SizeConfig.blockSizeHorizontal * 4),
+    collapsed: Container(
+      color: color,
+      child: Center(
+        child: Center(
+            child: Column(
+              children: <Widget>[
+                Icon(Icons.keyboard_arrow_up, size: SizeConfig.blockSizeVertical * 3, color: col,),
+                Text(' Swipe up to post', style: TextStyle(fontFamily: 'myriadpro', fontSize: SizeConfig.blockSizeVertical * 2, color: col),)
+              ],
+            )
+        ),
+      ),
+    ),
+    panel: Container(
+      child: Column(
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Container(
+                child: Column(
+                  children: <Widget>[
+                    Icon(Icons.keyboard_arrow_down, size: SizeConfig.blockSizeVertical * 3, color: Colors.grey,),
+                    Text('Pull down to dismiss', style: TextStyle(fontFamily: 'myriadpro', fontSize: SizeConfig.blockSizeVertical * 1.5, color: Colors.grey),)
+
+                  ],
+                ),
+              ),
+
+            ],
+          ),
+          Container(
+            child: TextField(
+              controller: postController,
+              style: TextStyle(
+                  fontFamily: 'myriadpro'
+              ),
+              decoration: InputDecoration(
+                  contentPadding: EdgeInsets.only(bottom: -10),
+                  hintText: 'Say something...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(
+                      fontFamily: 'myriadpro'
+                  )
+              ),
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+            ),
+          ),
+          SizedBox(height: SizeConfig.blockSizeVertical * 5,),
+          GestureDetector(
+          child: Container(
+//            margin: EdgeInsets.only(left: SizeConfig.blockSizeHorizontal * 4),
+            height: SizeConfig.blockSizeVertical * 5,
+            width:  SizeConfig.blockSizeVertical * 13,
+            child: Material(
+              borderRadius: BorderRadius.all(Radius.circular(150)),
+              color: Colors.green,
+              shadowColor: Colors.greenAccent,
+              elevation: 7,
+              child: Center(
+                child: Text(
+                  'Post',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: SizeConfig.blockSizeVertical * 2,
+                      fontFamily: 'myriadpro'
+                  ),
+                ),
+              ),
+            ),
+          ),
+              onTap: (){
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PlacePicker.PlacePicker(
+                      apiKey: 'AIzaSyDRttc2Q3q2aEzY-ke41sbgABJ9YMr0r48',   // Put YOUR OWN KEY here.
+//                      onPlacePicked: (result) {
+//                        print(result.vicinity);
+//                        print(postController.text);
+//
+//                        _firestore.collection('posts').add({
+//                          'text' : postText,
+//                          'sender' : loggedInUser.email,
+//                          'vicinity' : result.vicinity
+//                        });
+//
+//                        Navigator.of(context).pop();
+//                      },
+                    selectedPlaceWidgetBuilder: (_, selectedPlace, state, isSearchBarFocused){
+                        return isSearchBarFocused
+                            ? Container()
+                            : PlacePicker.FloatingCard(
+                          bottomPosition: MediaQuery.of(context).size.height * 0.05 ,
+                          leftPosition: MediaQuery.of(context).size.width * 0.3,
+                          rightPosition: MediaQuery.of(context).size.width * 0.3,
+                          width: SizeConfig.blockSizeHorizontal * 13,
+                          height: SizeConfig.blockSizeVertical * 5,
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.transparent,
+                          child: state == PlacePicker.SearchingState.Searching ?
+                          Center(child: CircularProgressIndicator(),) :
+                              Container(
+                                height: SizeConfig.blockSizeVertical * 5,
+                                width: SizeConfig.blockSizeHorizontal * 13,
+                                child: GestureDetector(
+                                  child: Container(
+                                    margin: EdgeInsets.only(left: SizeConfig.blockSizeHorizontal * 4),
+                                    height: SizeConfig.blockSizeVertical * 5,
+                                    width:  SizeConfig.blockSizeHorizontal * 13,
+                                    child: Material(
+                                      borderRadius: BorderRadius.all(Radius.circular(150)),
+                                      color: Colors.green,
+                                      child: Center(
+                                        child: Text(
+                                          'Post Here',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: SizeConfig.blockSizeVertical * 2,
+                                              fontFamily: 'myriadpro'
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  onTap: (){
+                                    print(selectedPlace.vicinity);
+                                    print(postController.text);
+                                    getPostLatLong('https://maps.googleapis.com/maps/api/place/details/json?place_id=${selectedPlace.placeId}&fields=geometry,name&key=AIzaSyDRttc2Q3q2aEzY-ke41sbgABJ9YMr0r48');
+
+                                    
+                                    posts.push().set({
+                                      'text': postText,
+                                      'sender': loggedInUser.email,
+                                      'vicinity': selectedPlace.vicinity,
+                                      'UserID': userID,
+                                      'g': postLong,
+                                      'l': postLat,
+                                      'radius': 0
+                                    });
+
+
+
+
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              )
+                        );
+                    },
+                      initialPosition: LatLng(latitude, longitude),
+                      useCurrentLocation: true,
+                      autocompleteLanguage: 'en',
+                      region: 'gh',
+                    ),
+                  ),
+                );
+
+              })
+        ],
+      ),
+    ),
+    minHeight: SizeConfig.blockSizeVertical * 7.5,
+    maxHeight: MediaQuery.of(context).size.height,
+    body:  Padding(
+      padding: EdgeInsets.only(bottom: SizeConfig.blockSizeVertical * 17),
+      child: Stack(
+        children: <Widget>[
+          Container(
+            margin: EdgeInsets.only(bottom: SizeConfig.blockSizeVertical * 10),
+            height: MediaQuery.of(context).size.height - 50,
+            width: MediaQuery.of(context).size.width,
+            child: GoogleMap(
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true,
+              compassEnabled: true,
+              initialCameraPosition: CameraPosition(
+                target: LatLng(7.9465, -1.0232),
+                zoom: 12.0,
+              ),
+
+              onMapCreated: (GoogleMapController controller){
+                mapController = controller;
+              },
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget ListScreen(){
+  return Container(
+    child: Center(
+      child: Text(
+        'Screen'
+      ),
+    ),
+  );
+}
+
 
 

@@ -5,6 +5,9 @@ import 'package:login_app4/sign_up_screen.dart';
 import 'package:login_app4/size_config.dart';
 import 'location.dart';
 
+double latitude;
+double longitude;
+
 class WelcomeScreen extends StatelessWidget {
 
   static const id = 'welcome_screen';
@@ -25,8 +28,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-  double latitude;
-  double longitude;
+
 
   void getLocation() async{
     Locations location = Locations();

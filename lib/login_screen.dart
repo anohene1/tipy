@@ -13,6 +13,7 @@ class LoginScreen extends StatefulWidget {
 
   static const String id = 'login_screen';
 
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -21,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final _auth = FirebaseAuth.instance;
 
-  String _email;
+  String email;
   String _password;
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -116,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: TextFormField(
                           keyboardType: TextInputType.emailAddress,
                           onChanged: (value){
-                            _email = value;
+                            email = value;
                           },
                           validator: validateEmail,
                           autovalidate: true,
@@ -229,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ));
 
                               final user = await _auth.signInWithEmailAndPassword(
-                                  email: _email, password: _password);
+                                  email: email, password: _password);
                               if (user != null) {
                                 Navigator.pushNamed(context, HomeScreen.id);
                               }
@@ -414,7 +415,9 @@ Try again later''', style: TextStyle(
         ),
       ),
     );
+
   }
+
 }
 
 enum authProblems { UserNotFound, PasswordNotValid, NetworkError, TooManyTimes }
