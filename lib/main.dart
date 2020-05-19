@@ -6,6 +6,7 @@ import 'package:login_app4/my_posts_screen.dart';
 import 'package:login_app4/my_replies_screen.dart';
 import 'package:login_app4/profile_screen.dart';
 import 'package:login_app4/sign_up_screen.dart';
+import 'package:login_app4/upload_screen.dart';
 import 'package:login_app4/welcome_screen.dart';
 import 'package:animated_splash/animated_splash.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,6 +15,9 @@ import 'dart:math';
 import 'package:login/login.dart';
 import 'package:login_app4/world_screen.dart';
 import 'package:theme_provider/theme_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:custom_splash/custom_splash.dart';
+
 
 
 
@@ -32,14 +36,14 @@ class MyApp extends StatelessWidget {
         accentColor: Colors.greenAccent,
         fontFamily: 'myriadpro'
       ),
-      home: AnimatedSplash(
-          imagePath: 'images/logos.gif',
-          home: Login(
-            loggedIn: HomeScreen(),
-            loggedOut: WelcomeScreen(),
-          ),
+      home: CustomSplash(
+        animationEffect: 'fade-in',
         duration: 2500,
-        type: AnimatedSplashType.StaticDuration,
+        imagePath: 'images/logos.gif',
+        home: Login(
+        loggedIn: HomeScreen(),
+        loggedOut: WelcomeScreen(),
+      ),
       ),
       routes: {
         LoginScreen.id : (context) => LoginScreen(),
@@ -49,7 +53,8 @@ class MyApp extends StatelessWidget {
         ProfileScreen.id: (context) => ProfileScreen(),
         WorldScreen.id: (context) => WorldScreen(),
         MyPostsScreen.id: (context) => MyPostsScreen(),
-        MyRepliesScreen.id: (context) => MyRepliesScreen()
+        MyRepliesScreen.id: (context) => MyRepliesScreen(),
+        UploadScreen.id: (context) => UploadScreen()
       },
     );
   }

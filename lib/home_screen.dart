@@ -1,5 +1,8 @@
 
 
+
+import 'dart:async';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +18,7 @@ import 'package:login_app4/sign_up_screen.dart';
 import 'package:login_app4/size_config.dart';
 import 'package:login_app4/tipy_icons_icons.dart';
 import 'package:login_app4/tipy_theme.dart';
+import 'package:login_app4/upload_screen.dart';
 import 'package:login_app4/world_screen.dart';
 import 'location.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
@@ -26,6 +30,16 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:sweetsheet/sweetsheet.dart';
+import 'package:firebase_image/firebase_image.dart';
+
+
+
+
+
+
+final SweetSheet _sweetSheet = SweetSheet();
+
 
 GoogleMapController mapController;
 
@@ -37,8 +51,8 @@ var postLong;
 void getPostLatLong(String url)async{
   http.Response response = await http.get(url);
   String data = response.body;
-  postLat = jsonDecode(data)['result']['geometry']['location']['lat'];
-  postLong = jsonDecode(data)['result']['geometry']['location']['lng'];
+  postLat = await jsonDecode(data)['result']['geometry']['location']['lat'];
+  postLong = await jsonDecode(data)['result']['geometry']['location']['lng'];
 }
 
 void getLatLng(String url)async{
@@ -68,9 +82,10 @@ String postText = postController.text;
 enum Screen{list, map}
 var placeID;
 var place_id;
+var Uid = loggedInUser.uid;
 
 final _firebaseDB = FirebaseDatabase.instance;
-final posts = _firebaseDB.reference().child('Customers available').child(userID).child('Posts');
+final posts = _firebaseDB.reference().child('Customers available').child(Uid).child('Posts');
 final comments = posts.child('Comments');
 final _auth = FirebaseAuth.instance;
 FirebaseUser loggedInUser;
@@ -105,6 +120,8 @@ void getLocation() async{
 }
 
 final postController = TextEditingController();
+final snackBar = SnackBar(content: Text('Sending post...'));
+final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
 
 class HomeScreen extends StatelessWidget {
 
@@ -169,10 +186,11 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
 
 
 
-
   TabController tabController;
 
   TextEditingController controller = TextEditingController();
+
+
 
   Icon toggleIcon = Icon(TipyIcons.crescent_moon, size: SizeConfig.blockSizeVertical * 2.5,);
   var theme = TipyTheme.lightTheme;
@@ -181,6 +199,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
   bool isLight = true;
   Color sliderColor = Colors.white;
   Screen selectedScreen;
+
 
   saveThemePref(value) async{
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -206,7 +225,6 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     _controller.setMapStyle(mapStyle);
   }
 
-  String _mapStyle;
 
 
 
@@ -217,16 +235,40 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     getCurrentUser();
     getLocation();
     selectedScreen = Screen.map;
-    rootBundle.loadString('assets/darkmap.txt').then((string){
-      _mapStyle = string;
+
+
+
+    Timer(Duration(seconds: 5), (){
+      print(DateTime.now());
+
+      _sweetSheet.show(
+        context: context,
+        title: Text('New Tip!', style: TextStyle( color: Colors.black, fontFamily: 'myriadpro', fontWeight: FontWeight.bold),),
+        description: Text('Lorem ipsum dolor sit amet', style: TextStyle(color: Colors.black, fontFamily: 'myriadpro'),),
+        color: CustomSheetColor(main: Colors.white, accent: Colors.white),
+        positive: SweetSheetAction(
+          onPressed: () {
+            Navigator.of(context).pushNamed(UploadScreen.id);
+          },
+          title: 'Accept',
+          color: Colors.green,
+          accentColor: Colors.greenAccent,
+        ),
+        negative: SweetSheetAction(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          title: 'Decline',
+          color: Colors.red,
+          accentColor: Colors.redAccent,
+        ),
+      );
     });
 
-    getThemePref();
 
 
 
   }
-
 
 
   @override
@@ -239,6 +281,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     return MaterialApp(
      theme: theme,
       home: Scaffold(
+        key: scaffoldKey,
         appBar: AppBar(
           centerTitle: true,
         title: Container(
@@ -352,7 +395,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                   accountEmail: Text(loggedInUser == null ? 'Loading...': loggedInUser.email),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: Colors.white,
-                  backgroundImage: AssetImage('images/logo.png'),
+                  backgroundImage: FirebaseImage('gs://tipy-98639.appspot.com/profile_pic'),
                 ),
               ),
               ListTile(
@@ -410,6 +453,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
               ListTile(
                 onTap: (){
                   Navigator.pushNamed(context, MyPostsScreen.id);
+
                 },
                 leading: Icon(TipyIcons.speech_bubble_1,  size: SizeConfig.blockSizeVertical * 2.5,),
                 title: Text('My Posts',
@@ -507,8 +551,8 @@ Widget MapScreen({color, context, mapCreated, col}){
         child: Center(
             child: Column(
               children: <Widget>[
-                Icon(Icons.keyboard_arrow_up, size: SizeConfig.blockSizeVertical * 3, color: col,),
-                Text(' Swipe up to post', style: TextStyle(fontFamily: 'myriadpro', fontSize: SizeConfig.blockSizeVertical * 2, color: col),)
+                Icon(Icons.keyboard_arrow_up, size: SizeConfig.blockSizeVertical * 3, color: Colors.grey,),
+                Text(' Swipe up to post', style: TextStyle(fontFamily: 'myriadpro', fontSize: SizeConfig.blockSizeVertical * 2, color: Colors.grey),)
               ],
             )
         ),
@@ -578,6 +622,7 @@ Widget MapScreen({color, context, mapCreated, col}){
                   context,
                   MaterialPageRoute(
                     builder: (context) => PlacePicker.PlacePicker(
+                      hintText: 'Search',
                       apiKey: 'AIzaSyDRttc2Q3q2aEzY-ke41sbgABJ9YMr0r48',   // Put YOUR OWN KEY here.
 //                      onPlacePicked: (result) {
 //                        print(result.vicinity);
@@ -627,27 +672,49 @@ Widget MapScreen({color, context, mapCreated, col}){
                                       ),
                                     ),
                                   ),
-                                  onTap: (){
+                                  onTap: () {
                                     print(selectedPlace.vicinity);
                                     print(postController.text);
-                                    getPostLatLong('https://maps.googleapis.com/maps/api/place/details/json?place_id=${selectedPlace.placeId}&fields=geometry,name&key=AIzaSyDRttc2Q3q2aEzY-ke41sbgABJ9YMr0r48');
+                                    getPostLatLong(
+                                        'https://maps.googleapis.com/maps/api/place/details/json?place_id=${selectedPlace
+                                            .placeId}&fields=geometry,name&key=AIzaSyDRttc2Q3q2aEzY-ke41sbgABJ9YMr0r48');
 
-                                    
-                                    posts.push().set({
-                                      'text': postText,
-                                      'sender': loggedInUser.email,
-                                      'vicinity': selectedPlace.vicinity,
-                                      'UserID': userID,
-                                      'g': postLong,
-                                      'l': postLat,
-                                      'radius': 0
-                                    });
 
+
+
+
+                                         Timer(Duration(seconds: 2), (){
+                                           posts.push().set({
+                                             'text': postController.text,
+                                             'sender': loggedInUser.email,
+                                             'vicinity': selectedPlace.vicinity,
+                                             'UserID': userID,
+                                             'g': postLong,
+                                             'l': postLat,
+                                             'radius': 0,
+                                           'timestamp': '${DateTime.now()}'
+                                           }).then((_){
+                                           scaffoldKey.currentState.showSnackBar(
+                                           new SnackBar(duration: new Duration(seconds: 4), content:
+                                           new Row(
+                                           children: <Widget>[
+
+                                           new Text("  Post is sent! 😌")
+                                           ],
+                                           ),
+                                           ));
+                                           });
+
+
+
+                                           postController.clear();
+
+                                         });
 
 
 
                                     Navigator.of(context).pop();
-                                  },
+                                  }
                                 ),
                               )
                         );
