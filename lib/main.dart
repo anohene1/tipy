@@ -5,6 +5,7 @@ import 'package:login_app4/home_screen.dart';
 import 'package:login_app4/my_posts_screen.dart';
 import 'package:login_app4/my_replies_screen.dart';
 import 'package:login_app4/profile_screen.dart';
+import 'package:login_app4/sign_up_name_screen.dart';
 import 'package:login_app4/sign_up_screen.dart';
 import 'package:login_app4/upload_screen.dart';
 import 'package:login_app4/welcome_screen.dart';
@@ -40,10 +41,7 @@ class MyApp extends StatelessWidget {
         animationEffect: 'fade-in',
         duration: 2500,
         imagePath: 'images/logos.gif',
-        home: Login(
-        loggedIn: HomeScreen(),
-        loggedOut: WelcomeScreen(),
-      ),
+        home: SignUpNameScreen()
       ),
       routes: {
         LoginScreen.id : (context) => LoginScreen(),
@@ -54,7 +52,8 @@ class MyApp extends StatelessWidget {
         WorldScreen.id: (context) => WorldScreen(),
         MyPostsScreen.id: (context) => MyPostsScreen(),
         MyRepliesScreen.id: (context) => MyRepliesScreen(),
-        UploadScreen.id: (context) => UploadScreen()
+        UploadScreen.id: (context) => UploadScreen(),
+        SignUpNameScreen.id: (context) => SignUpNameScreen()
       },
     );
   }

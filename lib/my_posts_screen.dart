@@ -1,11 +1,13 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'home_screen.dart';
 import 'size_config.dart';
 import 'home_screen.dart';
 import 'package:firebase_image/firebase_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 final postsRef = FirebaseDatabase.instance.reference().child('Customers available').child(Uid).child('Posts').orderByChild('timestamp');
-
+FirebaseUser loggedInUser;
 List lists = [];
 
 
@@ -68,7 +70,7 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
                                   width: 50,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(150),
-                                    image: DecorationImage(image: FirebaseImage('gs://tipy-98639.appspot.com/profile_pic'))
+                                    image: DecorationImage(image: FirebaseImage('gs://tipy-98639.appspot.com/profile_pics/${Uid}'))
                                   ),
                                 ),
                                 decoration: BoxDecoration(

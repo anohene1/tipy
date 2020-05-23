@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:login_app4/home_screen.dart';
 import 'package:login_app4/login_screen.dart';
+import 'package:login_app4/sign_up_name_screen.dart';
 import 'size_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:progress_dialog/progress_dialog.dart';
@@ -380,7 +381,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 email: _email, password: _password);
 
                             if(newuser != null){
-                              Navigator.pushNamed(context, HomeScreen.id);
+                              Navigator.pushNamed(context, SignUpNameScreen.id);
 
                               userID = newuser.user.uid;
                               customer.push().set({

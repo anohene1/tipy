@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:login_app4/home_screen.dart';
+import 'package:login_app4/sign_up_screen.dart';
 import 'package:login_app4/size_config.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'main.dart';
@@ -12,10 +13,12 @@ import 'home_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_image/firebase_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'home_screen.dart';
 
 
 
-final StorageReference profilePic = FirebaseStorage.instance.ref().child('profile_pic');
+final StorageReference profilePic = FirebaseStorage.instance.ref().child('profile_pics').child(Uid);
 
 class ProfileScreen extends StatefulWidget {
 
@@ -55,11 +58,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         sourcePath: image.path,
       maxHeight: 1080,
       maxWidth: 1080,
+      aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1)
     );
     if(croppedImage != null){
       _image = croppedImage;
       final StorageUploadTask task = profilePic.putFile(_image);
-      await task.onComplete;
 
       setState(() {
       });
@@ -101,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       //child: Image.file(_image),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(150),
-                        image: DecorationImage(image: FirebaseImage('gs://tipy-98639.appspot.com/profile_pic'))
+                        image: DecorationImage(image: FirebaseImage('gs://tipy-98639.appspot.com/profile_pics/$Uid'))
                       ),
                     ),
                     height: SizeConfig.blockSizeHorizontal * 50,

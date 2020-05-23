@@ -87,6 +87,7 @@ var Uid = loggedInUser.uid;
 final _firebaseDB = FirebaseDatabase.instance;
 final posts = _firebaseDB.reference().child('Customers available').child(Uid).child('Posts');
 final comments = posts.child('Comments');
+final allPosts = _firebaseDB.reference().child('World Posts');
 final _auth = FirebaseAuth.instance;
 FirebaseUser loggedInUser;
 
@@ -395,7 +396,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                   accountEmail: Text(loggedInUser == null ? 'Loading...': loggedInUser.email),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: Colors.white,
-                  backgroundImage: FirebaseImage('gs://tipy-98639.appspot.com/profile_pic'),
+                  backgroundImage: FirebaseImage('gs://tipy-98639.appspot.com/profile_pics/${loggedInUser.uid}'),
                 ),
               ),
               ListTile(
@@ -692,7 +693,7 @@ Widget MapScreen({color, context, mapCreated, col}){
                                              'g': postLong,
                                              'l': postLat,
                                              'radius': 0,
-                                           'timestamp': '${DateTime.now()}'
+                                           'timestamp': '${DateTime.now().toUtc().millisecondsSinceEpoch}'
                                            }).then((_){
                                            scaffoldKey.currentState.showSnackBar(
                                            new SnackBar(duration: new Duration(seconds: 4), content:
@@ -705,6 +706,17 @@ Widget MapScreen({color, context, mapCreated, col}){
                                            ));
                                            });
 
+
+                                          allPosts.push().set({
+                                            'text': postController.text,
+                                            'sender': loggedInUser.email,
+                                            'vicinity': selectedPlace.vicinity,
+                                            'UserID': userID,
+                                            'g': postLong,
+                                            'l': postLat,
+                                            'radius': 0,
+                                            'timestamp': '${DateTime.now().toUtc().millisecondsSinceEpoch}'
+                                          });
 
 
                                            postController.clear();
