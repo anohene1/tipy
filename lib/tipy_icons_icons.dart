@@ -30,4 +30,12 @@ class TipyIcons {
   static const IconData gong = IconData(0xe806, fontFamily: _kFontFam, fontPackage: _kFontPkg);
   static const IconData motorcycle = IconData(0xe807, fontFamily: _kFontFam, fontPackage: _kFontPkg);
   static const IconData paper_plane = IconData(0xe808, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+  static const IconData cloud_4 = IconData(0xe809, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+  static const IconData cloud_6 = IconData(0xe80a, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+  static const IconData home = IconData(0xe80b, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+  static const IconData cogs = IconData(0xe80c, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+  static const IconData clacket = IconData(0xe80d, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+  static const IconData photo_2 = IconData(0xe80e, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+  static const IconData camera_1 = IconData(0xe80f, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+  static const IconData camera = IconData(0xe810, fontFamily: _kFontFam, fontPackage: _kFontPkg);
 }

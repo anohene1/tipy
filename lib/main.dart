@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
         animationEffect: 'fade-in',
         duration: 2500,
         imagePath: 'images/logos.gif',
-        home: SignUpNameScreen()
+        home: HomeScreen() //Login(loggedIn: HomeScreen(), loggedOut: WelcomeScreen())
       ),
       routes: {
         LoginScreen.id : (context) => LoginScreen(),
